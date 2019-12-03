@@ -53,5 +53,41 @@ class PublishSubjectShowCase {
         //yep it does!
     }
 
+    @Test
+    fun `you can publish errors`() {
+        val publishSubject = PublishSubject.create<String>()
+
+        publishSubject
+            .subscribe ({
+                log("Got: $it")
+            }, {
+                log("error: $it")
+            }, {
+                log("completed")
+            })
+
+        publishSubject.onNext("Hi")
+        publishSubject.onError(Throwable("blast"))
+
+    }
+
+    @Test
+    fun `you can publish completion`() {
+        val publishSubject = PublishSubject.create<String>()
+
+        publishSubject
+            .subscribe ({
+                log("Got: $it")
+            }, {
+                log("error: $it")
+            }, {
+                log("completed")
+            })
+
+        publishSubject.onNext("Hi")
+        publishSubject.onComplete()
+
+    }
+
 
 }

@@ -8,6 +8,7 @@ import io.reactivex.observers.DisposableObserver
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import org.junit.Test
+import java.lang.RuntimeException
 
 class SubscribersShowcase {
 
@@ -38,11 +39,38 @@ class SubscribersShowcase {
         publisher.onNext("One")
         publisher.onNext("Two")
         publisher.onComplete()
+        publisher.onNext("Tree")
 
     }
 
     @Test
-    fun `basic subscription with DisposableObserver`() {
+    fun `subscribe and dispose with DisposableObserver`() {
+        val publisher = PublishSubject.create<String>()
+
+        val disposable = publisher
+            .subscribeWith(object : DisposableObserver<String>() {
+                override fun onNext(t: String) {
+                    log("onNext: ${t}")
+                }
+
+                override fun onError(e: Throwable) {
+                    log("onError: ${e}")
+                }
+
+                override fun onComplete() {
+                    log("onComplete")
+                }
+            })
+
+
+        publisher.onNext("One")
+        publisher.onNext("Two")
+        disposable.dispose()
+        publisher.onNext("Tree")
+    }
+
+    @Test
+    fun `subscribe when error is emitted`() {
         val publisher = PublishSubject.create<String>()
 
         val disposable = publisher
@@ -64,13 +92,14 @@ class SubscribersShowcase {
         publisher.onNext("One")
         publisher.onNext("Two")
         publisher.onError(RuntimeException("Catch me"))
+        publisher.onNext("Tree")
     }
 
     @Test
-    fun `basic subscription with Consumer`() {
+    fun `lambda subscriber - risky way`() {
         val publisher = PublishSubject.create<String>()
 
-        publisher
+        val disposable = publisher
             .subscribe {
                 log("onNext: $it")
             }
@@ -78,7 +107,42 @@ class SubscribersShowcase {
 
         publisher.onNext("One")
         publisher.onNext("Two")
+        publisher.onError(RuntimeException("blast"))
+    }
+
+    @Test
+    fun `lambda subscriber - safe way`() {
+        val publisher = PublishSubject.create<String>()
+
+        val disposable = publisher
+            .subscribe ({
+                log("onNext: $it")
+            }, {
+                log("onError: $it")
+            })
+
+
+        publisher.onNext("One")
+        publisher.onNext("Two")
+        publisher.onError(RuntimeException("blast"))
+    }
+
+    @Test
+    fun `lambda subscriber, error after complete`() {
+        val publisher = PublishSubject.create<String>()
+
+        val disposable = publisher
+            .subscribe ({
+                log("onNext: $it")
+            }, {
+                log("onError: $it")
+            })
+
+
+        publisher.onNext("One")
+        publisher.onNext("Two")
         publisher.onComplete()
+        publisher.onError(RuntimeException("blast"))
     }
 
 
